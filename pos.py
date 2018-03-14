@@ -1,5 +1,6 @@
 import json
 import pickle
+import argparse
 
 def tokenize(chars: str) -> list:
     "Convert a string of characters into a list of tokens."
@@ -47,14 +48,38 @@ def read_frequencies() -> dict:
         #print(json.dumps(word_freq, indent=1))
         return word_freq
 
-def tag(sentence: str) -> str:
-    for word in "this is a tnetennba".split():
+# the tree-to-sentence program takes care of that, but it's nice to have anyways
+def treat_punctuation(sentence: str) -> str:
+    for punctuation in ".,;:$%":
+        sentence = sentence.replace(punctuation, " {} ".format(punctuation))
+    return sentence
+
+def tag_sentence(sentence: str, sep: str=" ") -> str:
+    tags = []
+
+    for word in sentence.split():
         if word in pos_frequencies:
             pos = max(pos_frequencies[word], key=pos_frequencies[word].get)
         else:
             pos = "NN"
-        print("({} {})".format(word, pos))
+        tags.append(("({} {})".format(pos, word)))
+    return "(S {})".format(sep.join(tags))
+
+def tag_file(input_filename: str):
+    with open(input_filename,          'r') as sentences_file, \
+         open(input_filename + ".tst", 'w') as output_file:
+        for sentence in sentences_file:
+            output_file.write(tag_sentence(sentence) + "\n")
 
 if __name__ == "__main__":
-    #frequencies_from_file("penn/traindata")
+    argparser = argparse.ArgumentParser(description='Parts-of-speech tagger')
+    argparser.add_argument("input_file", help="File with sentences separated by newlines")
+    args = argparser.parse_args()
+
     pos_frequencies = read_frequencies()
+
+    tag_file(args.input_file)
+    #frequencies_from_file("penn/traindata")
+
+# test with `evalb -p collins.prm gold.gld test.tst`
+# test with `evalb -p collins.prm sentences23.gold sentences23.tst`
