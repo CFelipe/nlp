@@ -1,0 +1,30 @@
+* 2017-03-18
+** Implementação do algoritmo de Viterbi
+* 2017-03-14
+** $$ C $$ vem de _count_
+** Probabilidade transitiva:   $$ P \left( t _ { i } | t _ { i - 1} \right) = \frac { C \left( t _ { i - 1} ,t _ { i } \right) } { C \left( t _ { i - 1} \right) } $$
+** Probabilidade emissiva: $$ P \left( w _ { i } | t _ { i } \right) = \frac { C \left( t _ { i } ,w _ { i } \right) } { C \left( t _ { i } \right) } $$
+** MLE: Maximum Likelihood Estimate
+* 2017-03-13
+** Concluí o parser _naive_ e testei com evalb
+** Gastei um tempinho tentando converter de árvore pra frase com prolo-tools mas consegu
+* 2017-03-04
+** Leitura do capítulo 10
+** Dionysius Thrax of Alexandria (c. 100 B.C): syntax, diphtong, clitic, analogy
+*** Noun, verb, pronoun, preposition, adverb, conjunction, participle, article
+*** Thrax's eight
+*** Tagsets with many more parts of speech (Penn Treebank - 45)
+*** Closed class: fixed membership / function words (of, it, and, you)
+**** Particle is used in combination with a verb (/over/ in "she turned the paper over")
+***** Phrasal verb is a verb in combination with a particle (not predictable from distinct meanings)
+**** Article is a subtype of determiner
+*** Open class: nouns, verbs, adjectives, adverbs
+**** Proper nouns (no articles)
+**** Common nouns
+***** Count nouns (plurals) and mass nouns (no plurals)
+**** Adjectives (In Korean, adjectives act as a subclass of verbs)
+**** Adverbs (a hodge-podge)
+
+* 2017-02-28
+** Compilado evalb
+** Compilado tgrep2

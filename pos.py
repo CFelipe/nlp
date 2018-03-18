@@ -72,6 +72,7 @@ def tag_file(input_filename: str):
             output_file.write(tag_sentence(sentence) + "\n")
 
 if __name__ == "__main__":
+    # TODO: transfer that to the main program, run algorithm with strategy pattern
     argparser = argparse.ArgumentParser(description='Parts-of-speech tagger')
     argparser.add_argument("input_file", help="File with sentences separated by newlines")
     args = argparser.parse_args()
@@ -83,3 +84,21 @@ if __name__ == "__main__":
 
 # test with `evalb -p collins.prm gold.gld test.tst`
 # test with `evalb -p collins.prm sentences23.gold sentences23.tst`
+# tgrep:
+
+# to generate a binary
+# tgrep2 -p bank0.top bank0tgrep
+
+# to search for TOP
+# tgrep2 -c bank0tgrep -l TOP | less
+
+# to search for VP, VPN etc (regex support)
+# tgrep2 -c bank0tgrep -l /VP/ | less
+# tgrep2 -c bank0tgrep -l /^VP/ | less
+# tgrep2 -c bank0tgrep -l /^VP$/ | less
+
+# dominates
+# tgrep2 -c bank0tgrep -l '/^NP$/ < /PP/' | less
+
+# directly dominates
+# tgrep2 -c bank0tgrep -l '/^NP$/ << /PP/' | less
