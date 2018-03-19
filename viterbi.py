@@ -217,18 +217,15 @@ if __name__ == "__main__":
     probabilities = read_frequencies()
 
     argparser = argparse.ArgumentParser(description='Parts-of-speech tagger')
-    argparser.add_argument("-s", "--sentence",   help="Tag a sentence")
-    argparser.add_argument("-i", "--input_file", help="Input file")
-    argparser.add_argument("-t", "--train_file", help="Training file")
+    arg_group = argparser.add_mutually_exclusive_group()
+    arg_group.add_argument("-s", "--sentence",   help="Tag a sentence")
+    arg_group.add_argument("-i", "--input_file", help="Input file")
+    arg_group.add_argument("-t", "--train_file", help="Training file")
     args = argparser.parse_args()
 
     if args.input_file:
-        print("input file")
         tag_file(args.input_file, probabilities)
     elif args.sentence:
         print(tag_sentence(args.sentence, probabilities))
     elif args.train_file:
-        # frequencies_from_file("penn/traindata")
-        print("train file")
-
-
+        frequencies_from_file(args.train_file)
