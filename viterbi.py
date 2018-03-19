@@ -2,6 +2,7 @@ import json
 import pickle
 import argparse
 import time
+import sys
 
 START_STR = "START"
 END_STR = "END"
@@ -114,6 +115,11 @@ def unknown_word(word: str, probabilities: dict) -> bool:
 
     return True
 
+def info_word(word: str, probabilities: dict):
+    for tag in probabilities["pos_words"].keys():
+        if get_pos_words(probabilities["pos_words"], tag, word) > 0:
+            print(tag, get_pos_words(probabilities["pos_words"], tag, word))
+
 def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
     """Tags sentence using the Viterbi algorithm"""
 
@@ -143,6 +149,8 @@ def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
         if unknown_word(word, p):
             word = "man"
 
+        max_p_word = 0
+
         for tag in tags:
             max_p = 0.0
             max_tag = 0
@@ -167,6 +175,39 @@ def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
 
             viterbi[tag][idx_word] = max_p
             backpointer[tag][idx_word] = argmax_bp
+
+            if max_p > max_p_word:
+                max_p_word = max_p
+
+        if max_p_word == 0: # all failed
+            # backpointer is argmax viterbi
+
+            for tag in tags:
+                max_bigram_p = 0
+                argmax_bigram_p = 0
+
+                max_viterbi_p = 0
+                argmax_viterbi_p = 0
+                for prev_tag in tags:
+                    bigram_p = get_bigram(bigrams, tag, prev_tag)
+                    viterbi_p = viterbi[prev_tag][idx_word - 1]
+
+                    if bigram_p > max_bigram_p:
+                        max_bigram_p = bigram_p
+                        argmax_bigram_p = prev_tag
+
+                    if viterbi_p > max_viterbi_p:
+                        max_viterbi_p = viterbi_p
+                        argmax_viterbi_p = prev_tag
+
+                viterbi[tag][idx_word] = max_viterbi_p
+                backpointer[tag][idx_word] = argmax_viterbi_p
+
+            # print(word, "is all 0")
+            # print(unknown_word(word, p))
+            # print(info_word(word, p))
+            # print("---")
+            # sys.exit(0)
 
     # termination step
     max_p = 0
@@ -198,9 +239,9 @@ def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
             pos_tags.append(backpointer[last_tag][len(words) - 1 - idx])
             last_tag = pos_tags[-1]
     except KeyError as e:
-        print(e)
-        print(idx)
-        print(backpointer)
+        # print(e)
+        # print(idx)
+        # print(backpointer)
         print("Key error in sentence: ", sentence)
 
     pos_tags.reverse()
@@ -211,6 +252,7 @@ def tag_file(input_filename: str, probabilities):
     with open(input_filename,          'r') as sentences_file, \
          open(input_filename + ".tst", 'w') as output_file:
         for sentence in sentences_file:
+            print(sentence)
             output_file.write(tag_sentence(sentence, probabilities) + "\n")
 
 if __name__ == "__main__":
