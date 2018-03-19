@@ -122,15 +122,15 @@ def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
     viterbi = {}
     backpointer = {}
     for tag in tags:
-        viterbi[tag] = [[] for _ in range(len(words) + 2)]
-        backpointer[tag] = [[] for _ in range(len(words) + 2)]
+        viterbi[tag] = [[] for _ in range(len(words))]
+        backpointer[tag] = [[] for _ in range(len(words))]
 
-        viterbi[tag][1] = get_bigram(bigrams, tag, START_STR) * \
+        viterbi[tag][0] = get_bigram(bigrams, tag, START_STR) * \
                           get_pos_words(pos_words, tag, words[0])
-        backpointer[tag][1] = 0
+        backpointer[tag][0] = 0
 
     # recursion step
-    for idx_word, word in enumerate(words[1:], 2):
+    for idx_word, word in enumerate(words[1:], 1):
         for tag in tags:
             max_p = 0
             max_tag = 0
@@ -161,7 +161,7 @@ def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
     argmax_bp = 0
 
     for tag in tags:
-        p_tag = viterbi[tag][len(words)] * \
+        p_tag = viterbi[tag][len(words) - 1] * \
                 get_bigram(bigrams, END_STR, tag)
 
         if p_tag > max_p:
@@ -171,20 +171,20 @@ def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
     viterbi[END_STR] = max_p
     backpointer[END_STR] = argmax_bp
 
-    #print(json.dumps(viterbi, indent=1))
-    print(json.dumps(backpointer, indent=1))
+    # print(json.dumps(viterbi, indent=1))
+    # print(json.dumps(backpointer, indent=1))
+
     # backtrace
-
-    pos_tags = []
     last_tag = backpointer[END_STR]
+    pos_tags = [last_tag]
 
-    for idx, word in enumerate(words):
+    for idx in range(len(words) - 1):
         pos_tags.append(backpointer[last_tag][len(words) - 1 - idx])
         last_str = pos_tags[-1]
 
-    print(pos_tags[::-1])
-
-    #return "(S {})".format(sep.join(tags))
+    pos_tags.reverse()
+    words_tags = ["({} {})".format(pos_tag, word) for pos_tag, word in zip(pos_tags, words)]
+    return "(S {})".format(sep.join(words_tags))
 
 #def tag_file(input_filename: str):
 #    with open(input_filename,          'r') as sentences_file, \
@@ -195,6 +195,6 @@ def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
 if __name__ == "__main__":
     #frequencies_from_file("penn/traindata")
     probabilities = read_frequencies()
-    tag_sentence("The man looks down at the boat", probabilities)
+    print(tag_sentence("This sentence got tagged pretty well .", probabilities))
     #pos_frequencies = read_frequencies()
 
