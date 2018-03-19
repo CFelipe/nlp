@@ -107,10 +107,17 @@ def get_pos_words(d: dict, tag: str, word: str):
     else:
         return 0
 
+def unknown_word(word: str, probabilities: dict) -> bool:
+    for tag in probabilities["pos_words"].keys():
+        if get_pos_words(probabilities["pos_words"], tag, word) > 0:
+            return False
+
+    return True
 
 def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
     """Tags sentence using the Viterbi algorithm"""
 
+    #print(sentence)
     words = sentence.split()
 
     p = probabilities
@@ -119,6 +126,8 @@ def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
     tags = p["pos_words"].keys()
 
     # initialization step
+    first_word = words[0] if not unknown_word(words[0], p) else "man"
+
     viterbi = {}
     backpointer = {}
     for tag in tags:
@@ -126,16 +135,19 @@ def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
         backpointer[tag] = [[] for _ in range(len(words))]
 
         viterbi[tag][0] = get_bigram(bigrams, tag, START_STR) * \
-                          get_pos_words(pos_words, tag, words[0])
+                          get_pos_words(pos_words, tag, first_word)
         backpointer[tag][0] = 0
 
     # recursion step
     for idx_word, word in enumerate(words[1:], 1):
+        if unknown_word(word, p):
+            word = "man"
+
         for tag in tags:
-            max_p = 0
+            max_p = 0.0
             max_tag = 0
 
-            max_bp = 0 # backpointer doesn't care about the emission
+            max_bp = 0.0 # backpointer doesn't care about the emission
             argmax_bp = 0
 
             for prev_tag in tags:
@@ -173,28 +185,50 @@ def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
 
     # print(json.dumps(viterbi, indent=1))
     # print(json.dumps(backpointer, indent=1))
+    # print(viterbi)
+    # print(backpointer)
+    # print(sentence)
 
     # backtrace
     last_tag = backpointer[END_STR]
     pos_tags = [last_tag]
 
-    for idx in range(len(words) - 1):
-        pos_tags.append(backpointer[last_tag][len(words) - 1 - idx])
-        last_str = pos_tags[-1]
+    try:
+        for idx in range(len(words) - 1):
+            pos_tags.append(backpointer[last_tag][len(words) - 1 - idx])
+            last_tag = pos_tags[-1]
+    except KeyError as e:
+        print(e)
+        print(idx)
+        print(backpointer)
+        print("Key error in sentence: ", sentence)
 
     pos_tags.reverse()
     words_tags = ["({} {})".format(pos_tag, word) for pos_tag, word in zip(pos_tags, words)]
     return "(S {})".format(sep.join(words_tags))
 
-#def tag_file(input_filename: str):
-#    with open(input_filename,          'r') as sentences_file, \
-#         open(input_filename + ".tst", 'w') as output_file:
-#        for sentence in sentences_file:
-#            output_file.write(tag_sentence(sentence) + "\n")
+def tag_file(input_filename: str, probabilities):
+    with open(input_filename,          'r') as sentences_file, \
+         open(input_filename + ".tst", 'w') as output_file:
+        for sentence in sentences_file:
+            output_file.write(tag_sentence(sentence, probabilities) + "\n")
 
 if __name__ == "__main__":
-    #frequencies_from_file("penn/traindata")
     probabilities = read_frequencies()
-    print(tag_sentence("This sentence got tagged pretty well .", probabilities))
-    #pos_frequencies = read_frequencies()
+
+    argparser = argparse.ArgumentParser(description='Parts-of-speech tagger')
+    argparser.add_argument("-s", "--sentence",   help="Tag a sentence")
+    argparser.add_argument("-i", "--input_file", help="Input file")
+    argparser.add_argument("-t", "--train_file", help="Training file")
+    args = argparser.parse_args()
+
+    if args.input_file:
+        print("input file")
+        tag_file(args.input_file, probabilities)
+    elif args.sentence:
+        print(tag_sentence(args.sentence, probabilities))
+    elif args.train_file:
+        # frequencies_from_file("penn/traindata")
+        print("train file")
+
 

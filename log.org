@@ -1,5 +1,9 @@
+* 2017-03-19
+** Algoritmo de Viterbi funcionando
+** Erra com palavras desconhecidas
 * 2017-03-18
 ** Implementação do algoritmo de Viterbi
+** Errado mas quase certo
 * 2017-03-14
 ** $$ C $$ vem de _count_
 ** Probabilidade transitiva:   $$ P \left( t _ { i } | t _ { i - 1} \right) = \frac { C \left( t _ { i - 1} ,t _ { i } \right) } { C \left( t _ { i - 1} \right) } $$
