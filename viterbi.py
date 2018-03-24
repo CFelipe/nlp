@@ -1,273 +1,235 @@
-import json
+import common
 import pickle
-import argparse
-import time
-import sys
+import json
+from pathlib import Path
 
-START_STR = "START"
-END_STR = "END"
+class ViterbiTagger(common.Tagger):
+    PICKLE_FILE = "models/viterbi-model.pkl"
 
-def tokenize(chars: str) -> list:
-    "Convert a string of characters into a list of tokens."
-    return chars.replace('(', ' ( ').replace(')', ' ) ').split()
+    START_STR = "START"
+    END_STR = "END"
 
-def frequencies_from_file(filename: str):
-    """Calculates emission and transition probabilities.
+    def train(self, corpus_filename: str):
+        """Calculates emission and transition model.
 
-    t means tag, w means word.
+        t means tag, w means word.
 
-    Emission:   P(w[i] | t[i]) =   C(t[i], w[i]) / C(t[i])
-    Transition: P(t[i] | t[i-1]) = C(t[i-1], t[i]) / C(t[i-1])
+        Emission:   P(w[i] | t[i]) =   C(t[i], w[i]) / C(t[i])
+        Transition: P(t[i] | t[i-1]) = C(t[i-1], t[i]) / C(t[i-1])
 
-    Where C(t) counts the occurrences of t
-    """
+        Where C(t) counts the occurrences of t
+        """
 
-    probabilities = {}
-    pos_words = {}
-    with open(filename) as f:
-        parenstack = [];
-        bigrams = {}
-        bigrams[END_STR] = {}
+        model = {}
+        pos_words = {}
 
-        for line in f:
-            tokens = tokenize(line)
-            tokens_in_node = []
-            for token in tokens:
-                if token == '(':
-                    parenstack.append('(')
-                    tokens_in_node = []
-                elif token == 'S':
-                    prev = START_STR
-                elif token == ')':
-                    parenstack.pop()
-                    if not parenstack:
-                        if not prev in bigrams[END_STR]:
-                            bigrams[END_STR][prev] = 1
-                        else:
-                            bigrams[END_STR][prev] += 1
+        p = Path(corpus_filename)
+        with open(corpus_filename) as f:
+            parenstack = [];
+            bigrams = {}
+            bigrams[self.END_STR] = {}
 
-                    elif len(tokens_in_node) == 2:
-                        pos, word = tokens_in_node
+            for line in f:
+                tokens = common.tokenize(line)
+                tokens_in_node = []
+                for token in tokens:
+                    if token == '(':
+                        parenstack.append('(')
+                        tokens_in_node = []
+                    elif token == 'S':
+                        prev = self.START_STR
+                    elif token == ')':
+                        parenstack.pop()
+                        if not parenstack:
+                            if not prev in bigrams[self.END_STR]:
+                                bigrams[self.END_STR][prev] = 1
+                            else:
+                                bigrams[self.END_STR][prev] += 1
 
-                        if not pos in bigrams:
-                            bigrams[pos] = {}
+                        elif len(tokens_in_node) == 2:
+                            pos, word = tokens_in_node
 
-                        if not prev in bigrams[pos]:
-                            bigrams[pos][prev] = 1
-                        else:
-                            bigrams[pos][prev] += 1
+                            if not pos in bigrams:
+                                bigrams[pos] = {}
 
-                        prev = pos
+                            if not prev in bigrams[pos]:
+                                bigrams[pos][prev] = 1
+                            else:
+                                bigrams[pos][prev] += 1
 
-                        if not pos in pos_words:
-                            pos_words[pos] = {}
-                            pos_words[pos][word] = 1
-                        else:
-                            if not word in pos_words[pos]:
+                            prev = pos
+
+                            if not pos in pos_words:
+                                pos_words[pos] = {}
                                 pos_words[pos][word] = 1
                             else:
-                                pos_words[pos][word] += 1
-                            tokens_in_node = []
-                else:
-                    tokens_in_node.append(token)
+                                if not word in pos_words[pos]:
+                                    pos_words[pos][word] = 1
+                                else:
+                                    pos_words[pos][word] += 1
+                                tokens_in_node = []
+                    else:
+                        tokens_in_node.append(token)
 
-        # normalize transition probabilities
-        for pos, d in bigrams.items():
-            total = sum(d.values())
-            for prev, count in d.items():
-                bigrams[pos][prev] = count / total
+            # normalize transition model
+            for pos, d in bigrams.items():
+                total = sum(d.values())
+                for prev, count in d.items():
+                    bigrams[pos][prev] = count / total
 
-        # normalize emission probabilities
-        for pos, d in pos_words.items():
-            total = sum(d.values())
-            for word, count in d.items():
-                pos_words[pos][word] = count / total
+            # normalize emission model
+            for pos, d in pos_words.items():
+                total = sum(d.values())
+                for word, count in d.items():
+                    pos_words[pos][word] = count / total
 
-        probabilities["bigrams"] = bigrams
-        probabilities["pos_words"] = pos_words
+            model["bigrams"] = bigrams
+            model["pos_words"] = pos_words
 
-        print(json.dumps(bigrams, indent=1))
+            p = Path(self.PICKLE_FILE)
+            with p.open('wb') as output_file:
+                pickle.dump(model, output_file, pickle.HIGHEST_PROTOCOL)
 
-        with open('probabilities-viterbi.pkl', 'wb') as output_file:
-            pickle.dump(probabilities, output_file, pickle.HIGHEST_PROTOCOL)
+    def get_bigram(self, tag: str, prev: str):
+        if prev in self.model["bigrams"][tag].keys():
+            return self.model["bigrams"][tag][prev]
+        else:
+            return 0
 
-def read_frequencies() -> dict:
-    with open('probabilities-viterbi.pkl', 'rb') as input_file:
-        probabilities = pickle.load(input_file)
-        return probabilities
+    def get_pos_words(self, tag: str, word: str):
+        if word in self.model["pos_words"][tag].keys():
+            return self.model["pos_words"][tag][word]
+        else:
+            return 0
 
-def get_bigram(d: dict, tag: str, prev: str):
-    if prev in d[tag].keys():
-        return d[tag][prev]
-    else:
-        return 0
+    def unknown_word(self, word: str) -> bool:
+        for tag in self.model["pos_words"].keys():
+            if self.get_pos_words(tag, word) > 0:
+                return False
 
-def get_pos_words(d: dict, tag: str, word: str):
-    if word in d[tag].keys():
-        return d[tag][word]
-    else:
-        return 0
+        return True
 
-def unknown_word(word: str, probabilities: dict) -> bool:
-    for tag in probabilities["pos_words"].keys():
-        if get_pos_words(probabilities["pos_words"], tag, word) > 0:
-            return False
+    def info_word(self, word: str, model: dict):
+        for tag in model["pos_words"].keys():
+            if get_pos_words(model["pos_words"], tag, word) > 0:
+                print(tag, self.get_pos_words(tag, word))
 
-    return True
+    def tag_sentence(self, sentence: str) -> str:
+        """Tags sentence using the Viterbi algorithm"""
 
-def info_word(word: str, probabilities: dict):
-    for tag in probabilities["pos_words"].keys():
-        if get_pos_words(probabilities["pos_words"], tag, word) > 0:
-            print(tag, get_pos_words(probabilities["pos_words"], tag, word))
+        self.load_model()
 
-def tag_sentence(sentence: str, probabilities: dict, sep: str=" ",) -> str:
-    """Tags sentence using the Viterbi algorithm"""
+        words = sentence.split()
 
-    #print(sentence)
-    words = sentence.split()
+        p = self.model
+        bigrams = p["bigrams"]
+        pos_words = p["pos_words"]
+        tags = p["pos_words"].keys()
 
-    p = probabilities
-    bigrams = p["bigrams"]
-    pos_words = p["pos_words"]
-    tags = p["pos_words"].keys()
+        # initialization step
+        first_word = words[0] if not self.unknown_word(words[0]) else "man"
 
-    # initialization step
-    first_word = words[0] if not unknown_word(words[0], p) else "man"
-
-    viterbi = {}
-    backpointer = {}
-    for tag in tags:
-        viterbi[tag] = [[] for _ in range(len(words))]
-        backpointer[tag] = [[] for _ in range(len(words))]
-
-        viterbi[tag][0] = get_bigram(bigrams, tag, START_STR) * \
-                          get_pos_words(pos_words, tag, first_word)
-        backpointer[tag][0] = 0
-
-    # recursion step
-    for idx_word, word in enumerate(words[1:], 1):
-        if unknown_word(word, p):
-            word = "man"
-
-        max_p_word = 0
-
+        viterbi = {}
+        backpointer = {}
         for tag in tags:
-            max_p = 0.0
-            max_tag = 0
+            viterbi[tag] = [[] for _ in range(len(words))]
+            backpointer[tag] = [[] for _ in range(len(words))]
 
-            max_bp = 0.0 # backpointer doesn't care about the emission
-            argmax_bp = 0
+            viterbi[tag][0] = self.get_bigram(tag, self.START_STR) * \
+                              self.get_pos_words(tag, first_word)
+            backpointer[tag][0] = 0
 
-            for prev_tag in tags:
-                p_tag = viterbi[prev_tag][idx_word - 1] * \
-                        get_bigram(bigrams, tag, prev_tag) * \
-                        get_pos_words(pos_words, tag, word)
+        # recursion step
+        for idx_word, word in enumerate(words[1:], 1):
+            if self.unknown_word(word):
+                word = "man"
 
-                if p_tag > max_p:
-                    max_p = p_tag
-
-                bp_tag = viterbi[prev_tag][idx_word - 1] * \
-                         get_bigram(bigrams, tag, prev_tag)
-
-                if bp_tag > max_bp:
-                    max_bp = bp_tag
-                    argmax_bp = prev_tag
-
-            viterbi[tag][idx_word] = max_p
-            backpointer[tag][idx_word] = argmax_bp
-
-            if max_p > max_p_word:
-                max_p_word = max_p
-
-        if max_p_word == 0: # all failed
-            # backpointer is argmax viterbi
+            max_p_word = 0
 
             for tag in tags:
-                max_bigram_p = 0
-                argmax_bigram_p = 0
+                max_p = 0.0
+                max_tag = 0
 
-                max_viterbi_p = 0
-                argmax_viterbi_p = 0
+                max_bp = 0.0 # backpointer doesn't care about the emission
+                argmax_bp = 0
+
                 for prev_tag in tags:
-                    bigram_p = get_bigram(bigrams, tag, prev_tag)
-                    viterbi_p = viterbi[prev_tag][idx_word - 1]
+                    p_tag = viterbi[prev_tag][idx_word - 1] * \
+                            self.get_bigram(tag, prev_tag) * \
+                            self.get_pos_words(tag, word)
 
-                    if bigram_p > max_bigram_p:
-                        max_bigram_p = bigram_p
-                        argmax_bigram_p = prev_tag
+                    if p_tag > max_p:
+                        max_p = p_tag
 
-                    if viterbi_p > max_viterbi_p:
-                        max_viterbi_p = viterbi_p
-                        argmax_viterbi_p = prev_tag
+                    bp_tag = viterbi[prev_tag][idx_word - 1] * \
+                             self.get_bigram(tag, prev_tag)
 
-                viterbi[tag][idx_word] = max_viterbi_p
-                backpointer[tag][idx_word] = argmax_viterbi_p
+                    if bp_tag > max_bp:
+                        max_bp = bp_tag
+                        argmax_bp = prev_tag
 
-            # print(word, "is all 0")
-            # print(unknown_word(word, p))
-            # print(info_word(word, p))
-            # print("---")
-            # sys.exit(0)
+                viterbi[tag][idx_word] = max_p
+                backpointer[tag][idx_word] = argmax_bp
 
-    # termination step
-    max_p = 0
-    argmax_bp = 0
+                if max_p > max_p_word:
+                    max_p_word = max_p
 
-    for tag in tags:
-        p_tag = viterbi[tag][len(words) - 1] * \
-                get_bigram(bigrams, END_STR, tag)
+            if max_p_word == 0: # all failed
+                # backpointer is argmax viterbi
 
-        if p_tag > max_p:
-            max_p = p_tag
-            argmax_bp = tag
+                for tag in tags:
+                    max_bigram_p = 0
+                    argmax_bigram_p = 0
 
-    viterbi[END_STR] = max_p
-    backpointer[END_STR] = argmax_bp
+                    max_viterbi_p = 0
+                    argmax_viterbi_p = 0
+                    for prev_tag in tags:
+                        bigram_p = self.get_bigram(tag, prev_tag)
+                        viterbi_p = viterbi[prev_tag][idx_word - 1]
 
-    # print(json.dumps(viterbi, indent=1))
-    # print(json.dumps(backpointer, indent=1))
-    # print(viterbi)
-    # print(backpointer)
-    # print(sentence)
+                        if bigram_p > max_bigram_p:
+                            max_bigram_p = bigram_p
+                            argmax_bigram_p = prev_tag
 
-    # backtrace
-    last_tag = backpointer[END_STR]
-    pos_tags = [last_tag]
+                        if viterbi_p > max_viterbi_p:
+                            max_viterbi_p = viterbi_p
+                            argmax_viterbi_p = prev_tag
 
-    try:
-        for idx in range(len(words) - 1):
-            pos_tags.append(backpointer[last_tag][len(words) - 1 - idx])
-            last_tag = pos_tags[-1]
-    except KeyError as e:
-        # print(e)
-        # print(idx)
+                    viterbi[tag][idx_word] = max_viterbi_p
+                    backpointer[tag][idx_word] = argmax_viterbi_p
+
+        # termination step
+        max_p = 0
+        argmax_bp = 0
+
+        for tag in tags:
+            p_tag = viterbi[tag][len(words) - 1] * \
+                    self.get_bigram(self.END_STR, tag)
+
+            if p_tag > max_p:
+                max_p = p_tag
+                argmax_bp = tag
+
+        viterbi[self.END_STR] = max_p
+        backpointer[self.END_STR] = argmax_bp
+
+        # print(json.dumps(viterbi, indent=1))
+        # print(json.dumps(backpointer, indent=1))
+        # print(viterbi)
         # print(backpointer)
-        print("Key error in sentence: ", sentence)
+        # print(sentence)
 
-    pos_tags.reverse()
-    words_tags = ["({} {})".format(pos_tag, word) for pos_tag, word in zip(pos_tags, words)]
-    return "(S {})".format(sep.join(words_tags))
+        # backtrace
+        last_tag = backpointer[self.END_STR]
+        pos_tags = [last_tag]
 
-def tag_file(input_filename: str, probabilities):
-    with open(input_filename,          'r') as sentences_file, \
-         open(input_filename + ".tst", 'w') as output_file:
-        for sentence in sentences_file:
-            print(sentence)
-            output_file.write(tag_sentence(sentence, probabilities) + "\n")
+        try:
+            for idx in range(len(words) - 1):
+                pos_tags.append(backpointer[last_tag][len(words) - 1 - idx])
+                last_tag = pos_tags[-1]
+        except KeyError as e:
+            print("Key error in sentence: ", sentence)
 
-if __name__ == "__main__":
-    probabilities = read_frequencies()
-
-    argparser = argparse.ArgumentParser(description='Parts-of-speech tagger')
-    arg_group = argparser.add_mutually_exclusive_group()
-    arg_group.add_argument("-s", "--sentence",   help="Tag a sentence")
-    arg_group.add_argument("-i", "--input_file", help="Input file")
-    arg_group.add_argument("-t", "--train_file", help="Training file")
-    args = argparser.parse_args()
-
-    if args.input_file:
-        tag_file(args.input_file, probabilities)
-    elif args.sentence:
-        print(tag_sentence(args.sentence, probabilities))
-    elif args.train_file:
-        frequencies_from_file(args.train_file)
+        pos_tags.reverse()
+        words_tags = ["({} {})".format(pos_tag, word) for pos_tag, word in zip(pos_tags, words)]
+        return "(S {})".format(" ".join(words_tags))
