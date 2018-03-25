@@ -1,6 +1,7 @@
 import common
 import pickle
 import json
+import copy
 from pathlib import Path
 
 class ViterbiTagger(common.Tagger):
@@ -8,6 +9,8 @@ class ViterbiTagger(common.Tagger):
 
     START_STR = "START"
     END_STR = "END"
+    UNKNOWN_STR = "-UNKNOWN_WORD-"
+    UNKNOWN_TRESHOLD = 1
 
     def train(self, corpus_filename: str):
         """Calculates emission and transition model.
@@ -28,6 +31,7 @@ class ViterbiTagger(common.Tagger):
             parenstack = [];
             bigrams = {}
             bigrams[self.END_STR] = {}
+            word_counts = {}
 
             for line in f:
                 tokens = common.tokenize(line)
@@ -68,6 +72,11 @@ class ViterbiTagger(common.Tagger):
                                 else:
                                     pos_words[pos][word] += 1
                                 tokens_in_node = []
+
+                            if not word in word_counts:
+                                word_counts[word] = 1
+                            else:
+                                word_counts[word] += 1
                     else:
                         tokens_in_node.append(token)
 
@@ -76,6 +85,21 @@ class ViterbiTagger(common.Tagger):
                 total = sum(d.values())
                 for prev, count in d.items():
                     bigrams[pos][prev] = count / total
+
+            # rare words are counted as a single word
+            pos_words2 = copy.deepcopy(pos_words)
+
+            for pos, d in pos_words.items():
+                if pos != "-NONE-":
+                    for word, count in d.items():
+                        if count <= self.UNKNOWN_TRESHOLD:
+                            pos_words2[pos].pop(word)
+                            if not self.UNKNOWN_STR in pos_words2[pos]:
+                                pos_words2[pos][self.UNKNOWN_STR] = 1
+                            else:
+                                pos_words2[pos][self.UNKNOWN_STR] += 1
+
+            pos_words = pos_words2
 
             # normalize emission model
             for pos, d in pos_words.items():
@@ -127,7 +151,7 @@ class ViterbiTagger(common.Tagger):
         tags = p["pos_words"].keys()
 
         # initialization step
-        first_word = words[0] if not self.unknown_word(words[0]) else "man"
+        first_word = words[0] if not self.unknown_word(words[0]) else self.UNKNOWN_STR
 
         viterbi = {}
         backpointer = {}
@@ -142,7 +166,7 @@ class ViterbiTagger(common.Tagger):
         # recursion step
         for idx_word, word in enumerate(words[1:], 1):
             if self.unknown_word(word):
-                word = "man"
+                word = self.UNKNOWN_STR
 
             max_p_word = 0
 

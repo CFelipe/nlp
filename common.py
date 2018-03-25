@@ -30,4 +30,5 @@ class Tagger:
         with open(input_filename, 'r') as sentences_file:
             with open(input_filename + ".tst", 'w') as output_file:
                 for sentence in sentences_file:
-                    output_file.write(tag_sentence(sentence) + "\n")
+                    print(sentence)
+                    output_file.write(self.tag_sentence(sentence) + "\n")
