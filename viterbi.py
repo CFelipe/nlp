@@ -54,30 +54,31 @@ class ViterbiTagger(common.Tagger):
                         elif len(tokens_in_node) == 2:
                             pos, word = tokens_in_node
 
-                            if not pos in bigrams:
-                                bigrams[pos] = {}
+                            if pos != "-NONE-":
+                                if not pos in bigrams:
+                                    bigrams[pos] = {}
 
-                            if not prev in bigrams[pos]:
-                                bigrams[pos][prev] = 1
-                            else:
-                                bigrams[pos][prev] += 1
+                                if not prev in bigrams[pos]:
+                                    bigrams[pos][prev] = 1
+                                else:
+                                    bigrams[pos][prev] += 1
 
-                            prev = pos
+                                prev = pos
 
-                            if not pos in pos_words:
-                                pos_words[pos] = {}
-                                pos_words[pos][word] = 1
-                            else:
-                                if not word in pos_words[pos]:
+                                if not pos in pos_words:
+                                    pos_words[pos] = {}
                                     pos_words[pos][word] = 1
                                 else:
-                                    pos_words[pos][word] += 1
-                                tokens_in_node = []
+                                    if not word in pos_words[pos]:
+                                        pos_words[pos][word] = 1
+                                    else:
+                                        pos_words[pos][word] += 1
+                                    tokens_in_node = []
 
-                            if not word in word_counts:
-                                word_counts[word] = 1
-                            else:
-                                word_counts[word] += 1
+                                if not word in word_counts:
+                                    word_counts[word] = 1
+                                else:
+                                    word_counts[word] += 1
                     else:
                         tokens_in_node.append(token)
 
@@ -91,14 +92,13 @@ class ViterbiTagger(common.Tagger):
             pos_words2 = copy.deepcopy(pos_words)
 
             for pos, d in pos_words.items():
-                if pos != "-NONE-":
-                    for word, count in d.items():
-                        if count <= self.UNKNOWN_TRESHOLD:
-                            pos_words2[pos].pop(word)
-                            if not self.UNKNOWN_STR in pos_words2[pos]:
-                                pos_words2[pos][self.UNKNOWN_STR] = 1
-                            else:
-                                pos_words2[pos][self.UNKNOWN_STR] += 1
+                for word, count in d.items():
+                    if count <= self.UNKNOWN_TRESHOLD:
+                        pos_words2[pos].pop(word)
+                        if not self.UNKNOWN_STR in pos_words2[pos]:
+                            pos_words2[pos][self.UNKNOWN_STR] = 1
+                        else:
+                            pos_words2[pos][self.UNKNOWN_STR] += 1
 
             pos_words = pos_words2
 
@@ -221,8 +221,8 @@ class ViterbiTagger(common.Tagger):
                             max_viterbi_p = viterbi_p
                             argmax_viterbi_p = prev_tag
 
-                    viterbi[tag][idx_word] = max_bigram_p
-                    backpointer[tag][idx_word] = argmax_bigram_p
+                    viterbi[tag][idx_word] = max_viterbi_p
+                    backpointer[tag][idx_word] = argmax_viterbi_p
 
         # termination step
         max_p = 0

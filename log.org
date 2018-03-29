@@ -1,3 +1,10 @@
+* 2017-03-29
+** Término do relatório
+* 2017-03-28
+** Começo do relatório
+* 2017-03-??
+** Heurística de palavras desconhecidas adicionada
+** 94.6% de acurácia com o EVALB
 * 2017-03-19
 ** Algoritmo de Viterbi funcionando
 ** Erra com palavras desconhecidas

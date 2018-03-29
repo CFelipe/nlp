@@ -1,0 +1,159 @@
+\message{ !name(relatorio.tex)}\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian]{babel} % Hifenização e dicionário
+\usepackage[left=3.00cm, right=2.00cm, top=3.00cm, bottom=2.00cm]{geometry}
+\usepackage{enumitem} % Para itemsep etc
+\usepackage{longtable} % Dependência do longtabu
+\usepackage{tabu} % Para melhor criação de tabelas
+\usepackage{zi4} % Para fonte de códigos
+\usepackage{listings} % Para códigos
+\usepackage{lstautogobble} % Códigos indentados corretamente
+\usepackage{color} % Para coloração de códigos
+\usepackage{mathpazo} % Palatino
+\usepackage{parskip} % Linha em branco entre parágrafos em vez de recuo
+\usepackage{graphicx}
+\usepackage{verbatim} % Para comentários
+\usepackage{booktabs}
+\usepackage{amsmath} % argmax
+\usepackage[breaklinks]{hyperref}
+
+\DeclareGraphicsExtensions{.pdf,.png}
+
+\newcommand{\code}[1]{{\lstinline{#1}}}
+
+\usepackage{listings}
+\lstset{
+    autogobble,
+    columns=fullflexible,
+    showspaces=false,
+    showtabs=false,
+    breaklines=true,
+    showstringspaces=false,
+    breakatwhitespace=true,
+    escapeinside={(*@}{@*)},
+    basicstyle=\ttfamily\footnotesize,
+    frame=l,
+    framesep=12pt,
+    xleftmargin=12pt,
+    tabsize=4,
+    captionpos=b
+}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\begin{document}
+
+\message{ !name(relatorio.tex) !offset(-3) }
+
+\begin{center}
+    \textsc{Universidade Federal do Rio Grande do Norte} \\
+    \textsc{Departamento de Informática e Matemática Aplicada}
+\end{center}
+
+\bigskip
+
+\begin{tabular}{@{}rl@{}}
+    \emph{Disciplina} & Processamento de Linguagem Natural \\
+    \emph{Docente}    & Carlos Augusto Prolo \\
+    \emph{Discente}   & Felipe Cortez de Sá \\
+\end{tabular}
+
+\bigskip
+
+\begin{center}
+\large Parts-of-speech tagger
+\end{center}
+
+\section{Introdução}
+Este relatório descreve a implementação de dois algoritmos para realizar
+\emph{parts-of-speech tagging} e os resultados obtidos utilizando o EVALB para
+avaliação. 
+
+\section{Programa}
+O programa foi desenvolvido utilizando a linguagem de programação Python 3.
+Antes de realizar o \emph{tagging}, é preciso treinar o modelo para cada
+estratégia. O programa criará um diretório \code{models} onde os modelos são
+salvos em arquivos \code{.pkl}, formato \emph{pickle} que serializa estruturas
+de dados e podem ser posteriormente recuperados em outras execuções. Para rodar
+o programa, digite na linha de comandos
+
+\begin{lstlisting}[language=bash]
+$ python3 [-a naive | viterbi] [-t "treebank" | -s "frase" | -i "arquivo com frases"]
+\end{lstlisting}
+
+A flag \code{-a} é utilizada para selecionar o algoritmo desejado e as opções
+são \emph{naive} e \emph{viterbi}. Caso a flag seja omitida, o algoritmo
+padrão é o Viterbi.
+
+A flag \code{-t} treina o algoritmo selecionado (ingênuo ou Viterbi) com o
+\emph{treebank} do corpus passado como argumento e salva o modelo em um arquivo \code{.pkl}.
+
+A flag \code{-s} executa o tagger para uma frase passada como argumento.
+
+A flag \code{-i} executa o tagger para o arquivo de entrada com uma frase por
+linha. O programa escreverá os resultados do \emph{tagging} no arquivo de mesmo
+nome da entrada com o sufixo \code{.tst}.
+
+Os algoritmos implementados são derivados da classe \code{Tagger} definida em
+\code{common.py} e devem implementar os métodos abstratos \code{train},
+\code{load_model} e \code{tag_sentence}. A função \code{tag_file} é implementada
+pela classe base e simplesmente chama \code{tag_sentence} em todas as frases de
+um arquivo de entrada.
+
+\section{Estratégias}
+\subsection{Algoritmo ingênuo}
+Para armazenar as partes do discurso mais comuns para cada palavra, um
+\emph{hash map} é indexado por palavras e partes do discurso, e o valor é a
+quantidade de ocorrências de cada parte para cada palavra.
+\code{words_pos["word"]["NN"]}, por exemplo, retorna a quantidade de terminais
+na árvore de treino com formato \code{(NN word)}.
+
+A função \code{tag_sentence} simplesmente escolhe para cada palavra a \emph{tag}
+com maior frequência, ou seja, $ \argmax_{tag} \text{words\_pos[word][tag]} $$. Caso a palavra não
+seja encontrada, é escolhida a tag mais comum ``NN''.
+
+\subsection{Viterbi}
+\subsubsection{Treinamento}
+Como o algoritmo trabalha com probabilidades, ao terminar a contagem de
+frequências de modo semelhante ao algoritmo ingênuo no final as frequências são
+transformadas em probabilidades.
+
+\subsubsection{Tagging}
+O hash map \code{viterbi} armazena os valores do algoritmo de Viterbi e o hash
+map backpointer armazena os ponteiros para determinar a sequência mais provável
+no final do algoritmo.
+
+Uma dificuldade encontrada foi como lidar com palavras com baixa ocorrência no
+corpus. Uma palavra rara podia zerar um passo da matriz, e como os passos
+seguintes são calculados com base na frequência anterior, o erro se propagava,
+não sendo possível encontrar tags a partir daquele ponto.
+
+Em primeiro lugar simplesmente verifiquei se todas as probabilidades calculadas
+eram zero, e caso fosse, repetia os valores do passo passado. 93.6\%.
+
+Uma segunda estratégia foi determinar quais palavras do corpus tinham baixa
+ocorrência e tratá-las como uma única palavra com string dada pela constante
+\code{UNKNOWN_STR}. Uma palavra é considerada rara se ocorre $ x $ ou menos
+vezes, com $ x $ determinado pela constante \code{UNKNOWN_TRESHOLD}.
+
+Para calcular os bigramas para começo e fim de frase, foram criadas as partes do
+discurso \code{\"START\"} e \code{\"END\"}.
+
+\section{Resultados}
+Utilizou-se o corpus do Penn Treebank para treinamento, desenvolvimento e
+validação. Os algoritmos foram treinados utilizando o arquivo \code{traindata},
+ajustes foram feitos com o arquivo \code{bank0} e as árvores em \code{section23}
+foram convertidas em frases com o programa \code{fromTreeToSentence}.
+Utilizou-se então o EVALB para comparar o resultado do \emph{tagger} utilizando
+as frases da \emph{section23} para comparar com \emph{section23}.
+
+\subsection{Ingênuo}
+90\% com EVALB.
+
+\subsection{Viterbi}
+93.64\% sem heurística, 94.33\% com heurística de palavras desconhecidas usando o Penn Treebank.
+
+\end{document}
+
+\message{ !name(relatorio.tex) !offset(-159) }
