@@ -6,7 +6,7 @@ from viterbi import ViterbiTagger
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description='Parts-of-speech tagger')
-    argparser.add_argument("-a", "--algorithm", help="Tagging algorithm", default="viterbi")
+    argparser.add_argument("-a", "--algorithm", choices=["viterbi", "naive"], help="Tagging algorithm", default="viterbi")
     arg_group = argparser.add_mutually_exclusive_group()
     arg_group.add_argument("-s", "--sentence",   help="Tag a sentence")
     arg_group.add_argument("-i", "--input_file", help="Input file")

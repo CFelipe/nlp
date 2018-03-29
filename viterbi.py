@@ -10,12 +10,13 @@ class ViterbiTagger(common.Tagger):
     START_STR = "START"
     END_STR = "END"
     UNKNOWN_STR = "-UNKNOWN_WORD-"
-    UNKNOWN_TRESHOLD = 1
+    UNKNOWN_TRESHOLD = 5
 
     def train(self, corpus_filename: str):
         """Calculates emission and transition model.
 
         t means tag, w means word.
+
 
         Emission:   P(w[i] | t[i]) =   C(t[i], w[i]) / C(t[i])
         Transition: P(t[i] | t[i-1]) = C(t[i-1], t[i]) / C(t[i-1])
@@ -207,6 +208,7 @@ class ViterbiTagger(common.Tagger):
 
                     max_viterbi_p = 0
                     argmax_viterbi_p = 0
+
                     for prev_tag in tags:
                         bigram_p = self.get_bigram(tag, prev_tag)
                         viterbi_p = viterbi[prev_tag][idx_word - 1]
@@ -219,8 +221,8 @@ class ViterbiTagger(common.Tagger):
                             max_viterbi_p = viterbi_p
                             argmax_viterbi_p = prev_tag
 
-                    viterbi[tag][idx_word] = max_viterbi_p
-                    backpointer[tag][idx_word] = argmax_viterbi_p
+                    viterbi[tag][idx_word] = max_bigram_p
+                    backpointer[tag][idx_word] = argmax_bigram_p
 
         # termination step
         max_p = 0
