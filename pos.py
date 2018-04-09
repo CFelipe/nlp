@@ -1,5 +1,3 @@
-import json
-import pickle
 import argparse
 from naive import NaiveTagger
 from viterbi import ViterbiTagger

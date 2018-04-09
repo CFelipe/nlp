@@ -10,7 +10,7 @@ class NaiveTagger(common.Tagger):
 
         p = Path(corpus_filename)
         with open(corpus_filename) as f:
-            parenstack = [];
+            parenstack = []
             words_pos = []
             line_number = 1
 

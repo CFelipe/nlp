@@ -1,3 +1,5 @@
+* 2017-04-09
+** Parsing para extração de regras
 * 2017-03-29
 ** Término do relatório
 * 2017-03-28

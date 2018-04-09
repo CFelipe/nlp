@@ -1,4 +1,7 @@
 EVALB
 *.pkl
 penn
+models
 prolo-tools
+auto
+results

@@ -1,6 +1,5 @@
 import common
 import pickle
-import json
 import copy
 from pathlib import Path
 
@@ -10,7 +9,7 @@ class ViterbiTagger(common.Tagger):
     START_STR = "START"
     END_STR = "END"
     UNKNOWN_STR = "-UNKNOWN_WORD-"
-    UNKNOWN_TRESHOLD = 5
+    UNKNOWN_TRESHOLD = 1
 
     def train(self, corpus_filename: str):
         """Calculates emission and transition model.
@@ -239,8 +238,6 @@ class ViterbiTagger(common.Tagger):
         viterbi[self.END_STR] = max_p
         backpointer[self.END_STR] = argmax_bp
 
-        # print(json.dumps(viterbi, indent=1))
-        # print(json.dumps(backpointer, indent=1))
         # print(viterbi)
         # print(backpointer)
         # print(sentence)

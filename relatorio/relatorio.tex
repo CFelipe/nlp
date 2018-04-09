@@ -68,7 +68,13 @@ Este relatório descreve a implementação de dois algoritmos para realizar
 avaliação. 
 
 \section{Programa}
-O programa foi desenvolvido utilizando a linguagem de programação Python 3.
+O programa foi desenvolvido utilizando a linguagem de programação Python 3
+apenas com as bibliotecas padrão, sendo elas \code{argparse} para tratar
+argumentos de linha de comando, \code{pickle} para serializar estruturas de
+dados e salvar os modelos, \code{copy} para \code{deepcopy} de estruturas de
+dados e \code{pathlib} para criação de diretórios.
+
+\subsection{Uso}
 Antes de realizar o \emph{tagging}, é preciso treinar o modelo para cada
 estratégia. O programa criará um diretório \code{models} onde os modelos são
 salvos em arquivos \code{.pkl}, formato \emph{pickle} que serializa estruturas
@@ -131,7 +137,7 @@ sequência mais provável no final do algoritmo.
 Uma dificuldade encontrada foi a baixa ocorrência de algumas palavras no
 corpus. Uma palavra rara resultava em baixas probabilidades, podendo zerar um
 passo da matriz. Como os passos seguintes são calculados com base nos
-anteriores, o erro era propagado, sendo impossível determinar \emph{tags} para
+anteriores, o erro é propagado, sendo impossível determinar \emph{tags} para
 as palavras a partir daquele ponto.
 
 A medida inicial tomada para tratar o problema foi repetir as probabilidades do
@@ -139,7 +145,7 @@ passo anterior caso fosse detectado que o passo não tinha probabilidades maiore
 que zero.
 
 Uma segunda estratégia foi identificar, no treinamento, quais palavras ocorriam
-menos de $ x $ vezes no corpus, sendo $ x $ determinado pela constante
+$ x $ vezes ou menos no corpus, sendo $ x $ determinado pela constante
 \code{UNKNOWN_TRESHOLD}. As palavras raras encontradas são contabilizadas como uma
 única palavra com \emph{string} dada pela constante \code{UNKNOWN_STR}. No
 processo de \emph{tagging}, caso uma palavra não seja encontrada no corpus, ela
@@ -149,16 +155,19 @@ processo de \emph{tagging}, caso uma palavra não seja encontrada no corpus, ela
 Utilizou-se o corpus do Penn Treebank para treinamento, desenvolvimento e
 validação. Os algoritmos foram treinados utilizando o arquivo \code{traindata},
 ajustes no algoritmo foram feitos com o arquivo \code{bank0} e as árvores em \code{section23}
-foram convertidas em frases com o programa \code{fromTreeToSentence}.
-Utilizou-se então o EVALB para comparar o resultado do \emph{tagger} utilizando
-as frases da \code{section23} para comparar com o \emph{gold standard} \code{section23}.
+foram convertidas em frases com o programa \code{fromTreeToSentence}, gerando o
+arquivo \code{section23.sentences}. Utilizou-se então o EVALB para comparar o
+resultado do \emph{tagger} utilizando como entrada do programa as frases da
+\code{section23.sentences} para comparar com o \emph{gold standard}
+\code{section23}.
 
-As saídas do EVALB estão no diretório \code{results}.
+As saídas do EVALB e as frases com \emph{tags} estão no diretório \code{results}.
 
 \subsection{Ingênuo}
-90.88\% com EVALB.
+90.88\% de \emph{tagging accuracy}.
 
 \subsection{Viterbi}
-93.64\% sem heurística, 94.33\% com heurística de palavras desconhecidas usando o Penn Treebank.
+93.64\% de \emph{tagging accuracy} sem heurística, 94.33\% com heurística de
+palavras desconhecidas.
 
 \end{document}
