@@ -22,11 +22,11 @@ def print_tree(node, level = 0):
 def save_rule(node, rules):
     """Saves grammar rules"""
 
-    if node is not None:
+    if node:
+        node.children = [child for child in node.children if child.root != "-NONE-"]
         if node.children:
             formatted_children = " ".join([node.root for node in node.children])
-            # print("{} -> {}".format(node.root, formatted_children))
-            rules.append("{} -> {}".format(node.root, formatted_children))
+            rules.append("{:>10} -> {}".format(node.root, formatted_children))
 
         for n in node.children:
             save_rule(n, rules)
@@ -71,8 +71,9 @@ def extract_grammar(filename: str):
                         pos_stack.append(node)
                 prev = token
 
-        print(len(rules))
-        print(Counter(rules).most_common(30))
+        print("{} rules".format(len(rules)))
+        for rule in Counter(rules).most_common(100):
+            print("{:>5} | {}".format(rule[1], rule[0]))
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Grammar extractor")
