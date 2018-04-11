@@ -62,7 +62,30 @@ class Grammar:
             self.rules.append(nt_rule)
 
     def cnf_bin(self):
-        pass
+        new_rules = []
+        for rule in self.rules:
+            if len(rule.rhs) > 2:
+                count = 0
+
+                rhs = rule.rhs
+                while len(rhs) > 2:
+                    next_rule = "{}_{}".format(rule.lhs, count)
+                    new_lhs = rule.lhs if count == 0 else next_rule
+                    new_rhs = [rhs[0], "{}_{}".format(rule.lhs, count + 1)]
+                    new_rules.append(Rule(new_lhs, new_rhs))
+                    count += 1
+                    rhs = rhs[1:]
+
+                new_lhs = "{}_{}".format(rule.lhs, count)
+                new_rhs = rhs
+                new_rules.append(Rule(new_lhs, new_rhs))
+            else:
+                new_rules.append(rule)
+
+        self.rules = new_rules
+
+        for rule in self.rules:
+            print(rule)
 
     def terminal(self, pos: str):
         return pos in self.terminals
@@ -88,6 +111,7 @@ def save_rule(node, rules):
             node.children = [
                 child for child in node.children if child.root != "-NONE-"
             ]
+
             rules.append(
                 Rule(node.root, [child.root for child in node.children]))
 
