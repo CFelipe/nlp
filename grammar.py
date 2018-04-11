@@ -11,6 +11,20 @@ class Node:
     def __repr__(self):
         return "[R: {} + {} children]".format(self.root, len(self.children))
 
+class Rule:
+    def __init__(self, lhs, rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def __repr__(self):
+        return "{:>10} -> {}".format(self.lhs, " ".join(self.rhs))
+
+    def __eq__(self, other):
+        return self.lhs == other.lhs and self.rhs == other.rhs
+
+    def __hash__(self):
+        return hash((tuple(self.lhs), tuple(self.rhs)))
+
 def print_tree(node, level = 0):
     """Prints a tree in pre-order"""
 
@@ -27,11 +41,13 @@ def save_rule(node, rules):
             return
         elif node.children:
             node.children = [child for child in node.children if child.root != "-NONE-"]
-            formatted_children = " ".join([node.root for node in node.children])
-            rules.append("{:>10} -> {}".format(node.root, formatted_children))
+            rules.append(Rule(node.root, [child.root for child in node.children]))
 
             for n in node.children:
                 save_rule(n, rules)
+
+def cnf_binarize(rules):
+    pass
 
 def extract_grammar(filename: str):
     with open(filename, "r") as corpus_file:
@@ -92,3 +108,4 @@ if __name__ == "__main__":
     argparser.add_argument("input_file", help="Corpus file")
     args = argparser.parse_args()
     extract_grammar(args.input_file)
+    # print(Rule("A", ["B C"]) == Rule("A", ["B C"]))
