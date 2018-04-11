@@ -84,9 +84,6 @@ class Grammar:
 
         self.rules = new_rules
 
-        for rule in self.rules:
-            print(rule)
-
     def terminal(self, pos: str):
         return pos in self.terminals
 
@@ -119,7 +116,7 @@ def save_rule(node, rules):
                 save_rule(n, rules)
 
 
-def extract_grammar(filename: str):
+def extract_grammar(filename: str, args):
     with open(filename, "r") as corpus_file:
         pos_stack = []
         paren_stack = []
@@ -166,24 +163,35 @@ def extract_grammar(filename: str):
         MOST_COMMON_COUNT = 1000
         sorted_rules = Counter(rules).most_common()
 
-        for rule in sorted_rules[:MOST_COMMON_COUNT]:
-            print("{:>5} | {}".format(rule[1], rule[0]))
+        print(args.mode)
+        if args.mode == "pre":
+            for rule in sorted_rules[:MOST_COMMON_COUNT]:
+                print("{:>5} | {}".format(rule[1], rule[0]))
 
-        sum_first = sum([rule[1] for rule in sorted_rules[:MOST_COMMON_COUNT]])
-        sum_rest = sum([rule[1] for rule in sorted_rules[MOST_COMMON_COUNT:]])
+            sum_first = sum([rule[1] for rule in sorted_rules[:MOST_COMMON_COUNT]])
+            sum_rest = sum([rule[1] for rule in sorted_rules[MOST_COMMON_COUNT:]])
 
-        print("{} rules total:".format(len(rules)))
-        print("{:>8} (first {})".format(sum_first, MOST_COMMON_COUNT))
-        print("{:>8} (rest)".format(sum_rest))
-        print("{:.3f}% coverage".format(100.0 * sum_first / len(rules)))
-        assert len(rules) == sum_first + sum_rest
+            print("{} rules total:".format(len(rules)))
+            print("{:>8} (first {})".format(sum_first, MOST_COMMON_COUNT))
+            print("{:>8} (rest)".format(sum_rest))
+            print("{:.3f}% coverage".format(100.0 * sum_first / len(rules)))
+            assert len(rules) == sum_first + sum_rest
+        else:
+            grammar_rules = [rule[0] for rule in sorted_rules[:MOST_COMMON_COUNT]]
+            grammar = Grammar(grammar_rules, terminals)
+            for rule in grammar.rules:
+                print(rule)
 
-        grammar_rules = [rule[0] for rule in sorted_rules[:MOST_COMMON_COUNT]]
-        grammar = Grammar(grammar_rules, terminals)
 
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Grammar extractor")
     argparser.add_argument("input_file", help="Corpus file")
+    argparser.add_argument(
+        "-m",
+        "--mode",
+        choices=["pre", "post"],
+        help="Rules pre or post CNF conversion",
+        default="post")
     args = argparser.parse_args()
-    extract_grammar(args.input_file)
+    extract_grammar(args.input_file, args)
