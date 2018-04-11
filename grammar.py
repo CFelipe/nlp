@@ -3,7 +3,7 @@ import argparse
 from collections import Counter
 
 class Node:
-    def __init__(self, root, children=None):
+    def __init__(self, root: str, children: list = None):
         if children is None: children = []
         self.root = root
         self.children = children
@@ -12,7 +12,7 @@ class Node:
         return "[R: {} + {} children]".format(self.root, len(self.children))
 
 class Rule:
-    def __init__(self, lhs, rhs):
+    def __init__(self, lhs: str, rhs: list):
         self.lhs = lhs
         self.rhs = rhs
 
@@ -24,6 +24,17 @@ class Rule:
 
     def __hash__(self):
         return hash((tuple(self.lhs), tuple(self.rhs)))
+
+class Grammar:
+    def __init__(self, rules: list, terminals: set):
+        self.rules = rules
+        self.nonterminals = set()
+        self.terminals = terminals
+
+        for rule in self.rules:
+            self.nonterminals.add(rule.lhs)
+
+        assert self.terminals & self.nonterminals == set()
 
 def print_tree(node, level = 0):
     """Prints a tree in pre-order"""
@@ -46,6 +57,9 @@ def save_rule(node, rules):
             for n in node.children:
                 save_rule(n, rules)
 
+def cnf_term(rules):
+    pass
+
 def cnf_binarize(rules):
     pass
 
@@ -56,6 +70,7 @@ def extract_grammar(filename: str):
         prev = None
         root = None
         rules = []
+        terminals = set()
 
         for line in corpus_file:
             tokens = common.tokenize(line)
@@ -87,10 +102,14 @@ def extract_grammar(filename: str):
                         else:
                             root = node
                         pos_stack.append(node)
+                    elif prev != "-NONE-": # previous token was a POS, can only be a terminal
+                        terminals.add(prev)
+
                 prev = token
 
         MOST_COMMON_COUNT = 1000
         sorted_rules = Counter(rules).most_common()
+
         for rule in sorted_rules[:MOST_COMMON_COUNT]:
             print("{:>5} | {}".format(rule[1], rule[0]))
 
@@ -103,9 +122,13 @@ def extract_grammar(filename: str):
         print("{:.3f}% coverage".format(100.0 * sum_first / len(rules)))
         assert len(rules) == sum_first + sum_rest
 
+        grammar_rules = [rule[0] for rule in sorted_rules[:MOST_COMMON_COUNT]]
+        # extra_rules   = [rule[0] for rule in sorted_rules[MOST_COMMON_COUNT:]]
+
+        grammar = Grammar(grammar_rules, terminals)
+
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Grammar extractor")
     argparser.add_argument("input_file", help="Corpus file")
     args = argparser.parse_args()
     extract_grammar(args.input_file)
-    # print(Rule("A", ["B C"]) == Rule("A", ["B C"]))
