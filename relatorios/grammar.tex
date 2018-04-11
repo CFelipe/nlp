@@ -1,0 +1,92 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[left=3.00cm,
+            right=2.00cm,
+            top=3.00cm,
+            bottom=2.00cm]{geometry}
+\usepackage[brazilian]{babel} % Hifenização e dicionário
+\usepackage{enumitem}         % Para itemsep etc
+\usepackage{zi4}              % Para fonte de códigos
+\usepackage{listings}         % Para códigos
+\usepackage{lstautogobble}    % Códigos indentados corretamente
+\usepackage{color}            % Para coloração de códigos
+\usepackage{mathpazo}         % Palatino
+\usepackage{parskip}          % Linha em branco entre parágrafos em vez de recuo
+\usepackage{verbatim}         % Para comentários
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[breaklinks]{hyperref}
+
+\DeclareGraphicsExtensions{.pdf,.png}
+
+\newcommand{\code}[1]{{\lstinline{#1}}}
+
+\usepackage{listings}
+\lstset{
+    autogobble,
+    columns=fullflexible,
+    showspaces=false,
+    showtabs=false,
+    breaklines=true,
+    showstringspaces=false,
+    breakatwhitespace=true,
+    escapeinside={(*@}{@*)},
+    basicstyle=\ttfamily\footnotesize,
+    frame=l,
+    framesep=12pt,
+    xleftmargin=12pt,
+    tabsize=4,
+    captionpos=b
+}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\begin{document}
+\begin{center}
+    \textsc{Universidade Federal do Rio Grande do Norte} \\
+    \textsc{Departamento de Informática e Matemática Aplicada}
+\end{center}
+
+\bigskip
+
+\begin{tabular}{@{}rl@{}}
+    \emph{Disciplina} & Processamento de Linguagem Natural \\
+    \emph{Docente}    & Carlos Augusto Prolo \\
+    \emph{Discente}   & Felipe Cortez de Sá \\
+\end{tabular}
+
+\bigskip
+
+\begin{center}
+\large Extração de gramática
+\end{center}
+
+\section{Introdução}
+Este relatório descreve a implementação de um programa para extrair a gramática
+de um corpus e convertê-la para a \emph{Chomsky Normal Form}.
+
+\section{Programa}
+O programa foi desenvolvido utilizando a linguagem de programação Python 3
+apenas com as bibliotecas padrão, sendo elas \code{argparse} para tratar
+argumentos de linha de comando, \code{pickle} para serializar estruturas de
+dados e salvar os modelos,
+
+\subsection{Uso}
+Para rodar o programa, digite na linha de comandos
+
+\begin{lstlisting}[language=bash]
+$ python3 grammar.py input_file
+\end{lstlisting}
+
+em que \code{input_file} é o arquivo do corpus contendo a gramática que se
+deseja extrair.
+
+\section{Estratégias}
+
+\section{Resultados}
+As 1000 regras mais comuns representam 87.57\% das regras presentes no corpus e
+podem ser vistas no arquivo \code{rules.txt}.
+
+\end{document}
