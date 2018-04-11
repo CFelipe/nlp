@@ -23,13 +23,15 @@ def save_rule(node, rules):
     """Saves grammar rules"""
 
     if node:
-        node.children = [child for child in node.children if child.root != "-NONE-"]
-        if node.children:
+        if node.children and len(node.children) == 1 and node.children[0].root == "-NONE-":
+            return
+        elif node.children:
+            node.children = [child for child in node.children if child.root != "-NONE-"]
             formatted_children = " ".join([node.root for node in node.children])
             rules.append("{:>10} -> {}".format(node.root, formatted_children))
 
-        for n in node.children:
-            save_rule(n, rules)
+            for n in node.children:
+                save_rule(n, rules)
 
 def extract_grammar(filename: str):
     with open(filename, "r") as corpus_file:
@@ -71,9 +73,19 @@ def extract_grammar(filename: str):
                         pos_stack.append(node)
                 prev = token
 
-        print("{} rules".format(len(rules)))
-        for rule in Counter(rules).most_common(100):
+        MOST_COMMON_COUNT = 1000
+        sorted_rules = Counter(rules).most_common()
+        for rule in sorted_rules[:MOST_COMMON_COUNT]:
             print("{:>5} | {}".format(rule[1], rule[0]))
+
+        sum_first = sum([rule[1] for rule in sorted_rules[:MOST_COMMON_COUNT]])
+        sum_rest  = sum([rule[1] for rule in sorted_rules[MOST_COMMON_COUNT:]])
+
+        print("{} rules total:".format(len(rules)))
+        print("{:>8} (first {})".format(sum_first, MOST_COMMON_COUNT))
+        print("{:>8} (rest)".format(sum_rest))
+        print("{:.3f}% coverage".format(100.0 * sum_first / len(rules)))
+        assert len(rules) == sum_first + sum_rest
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Grammar extractor")
