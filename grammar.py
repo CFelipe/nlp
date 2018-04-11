@@ -28,6 +28,7 @@ class Rule:
         return hash((tuple(self.lhs), tuple(self.rhs)))
 
 
+# TODO: make terminals lowercase
 class Grammar:
     def __init__(self, rules: list, terminals: set):
         self.rules = rules
@@ -39,11 +40,32 @@ class Grammar:
 
         assert self.terminals & self.nonterminals == set()
 
+        self.cnf_term()
+        self.cnf_bin()
+
     def cnf_term(self):
+        term_rules = []
+        for rule in self.rules:
+            new_rhs = [
+                "{}_NT".format(pos) if self.terminal(pos) else pos
+                for pos in rule.rhs
+            ]
+
+            new_rule = Rule(rule.lhs, new_rhs)
+            term_rules.append(new_rule)
+
+        self.rules = term_rules
+
+        # create nonterminal rules from terminals
+        for terminal in self.terminals:
+            nt_rule = Rule("{}_NT".format(terminal), [terminal])
+            self.rules.append(nt_rule)
+
+    def cnf_bin(self):
         pass
 
-    def cnf_binarize(self):
-        pass
+    def terminal(self, pos: str):
+        return pos in self.terminals
 
 
 def print_tree(node, level=0):
@@ -126,10 +148,10 @@ def extract_grammar(filename: str):
         sum_first = sum([rule[1] for rule in sorted_rules[:MOST_COMMON_COUNT]])
         sum_rest = sum([rule[1] for rule in sorted_rules[MOST_COMMON_COUNT:]])
 
-        print("{} rules total:"  .format(len(rules)))
-        print("{:>8} (first {})" .format(sum_first, MOST_COMMON_COUNT))
-        print("{:>8} (rest)"     .format(sum_rest))
-        print("{:.3f}% coverage" .format(100.0 * sum_first / len(rules)))
+        print("{} rules total:".format(len(rules)))
+        print("{:>8} (first {})".format(sum_first, MOST_COMMON_COUNT))
+        print("{:>8} (rest)".format(sum_rest))
+        print("{:.3f}% coverage".format(100.0 * sum_first / len(rules)))
         assert len(rules) == sum_first + sum_rest
 
         grammar_rules = [rule[0] for rule in sorted_rules[:MOST_COMMON_COUNT]]
