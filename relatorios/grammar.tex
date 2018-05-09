@@ -24,7 +24,7 @@
 
 \usepackage{listings}
 \lstset{
-    autogobble,
+    autogobble=true,
     columns=fullflexible,
     showspaces=false,
     showtabs=false,
@@ -37,11 +37,9 @@
     framesep=12pt,
     xleftmargin=12pt,
     tabsize=4,
-    captionpos=b
+    captionpos=b,
+    belowskip=-0.3 \baselineskip
 }
-
-\DeclareMathOperator*{\argmax}{arg\,max}
-\DeclareMathOperator*{\argmin}{arg\,min}
 
 \begin{document}
 \begin{center}
@@ -70,23 +68,52 @@ de um corpus e convertê-la para a \emph{Chomsky Normal Form}.
 \section{Programa}
 O programa foi desenvolvido utilizando a linguagem de programação Python 3
 apenas com as bibliotecas padrão, sendo elas \code{argparse} para tratar
-argumentos de linha de comando, \code{pickle} para serializar estruturas de
-dados e salvar os modelos,
+argumentos de linha de comando e \code{collections} para contar a frequência de
+cada regra.
+
 
 \subsection{Uso}
 Para rodar o programa, digite na linha de comandos
 
 \begin{lstlisting}[language=bash]
-$ python3 grammar.py input_file
+$ python3 grammar.py input_file [-m "pre" | "post"] 
 \end{lstlisting}
 
 em que \code{input_file} é o arquivo do corpus contendo a gramática que se
 deseja extrair.
 
-\section{Conversão para Chomsky Normal Form}
+A flag \code{-m} é utilizada para imprimir as regras pré ou pós conversão para
+CNF. Caso seja omitida, o padrão é a impressão das regras convertidas.
+
+As regras são escritas na saída padrão \code{stdout}.
+
+\section{Conversão para forma normal de Chomsky}
+Foi utilizado o corpus \code{traindata-TOP}, garantindo que há
+uma regra base que serve como símbolo \code{START}. 
+
+\subsection{Terminais}
+O método \code{cnf_term} cria, para cada terminal, uma regra não-terminal no formato
+\code{TERM_NT -> TERM}. As ocorrências de terminais nas produções são então
+substituídas pelos não-terminais criados.
+
+\subsection{Binarização}
+O método \code{cnf_bin} transforma regras com mais de dois não-terminais no lado direito
+em múltiplas regras, cada uma com dois não-terminais no lado direito.
+
+Para a regra \code{NP -> DT_NT NN_NT CC_NT NN_NT NN_NT}, por exemplo, temos
+
+\begin{lstlisting}[columns=fixed]
+NP   -> DT_NT NP_1
+NP_1 -> NN_NT NP_2
+NP_2 -> CC_NT NP_3
+NP_3 -> NN_NT NN_NT
+\end{lstlisting}
+
 
 \section{Resultados}
-As 1000 regras mais comuns representam 88.10\% do total e podem ser vistas no
-arquivo \code{rules.txt}.
+As 1000 regras mais comuns aparecem 690502 vezes dentre um total de 783701
+produ\-ções, cobrindo 88.10\% do corpus, e podem ser vistas no arquivo
+\code{grammar.txt}. As regras na forma normal de Chomsky encontram-se no arquivo
+\code{grammar-cnf.txt}
 
 \end{document}

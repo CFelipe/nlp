@@ -163,8 +163,8 @@ def extract_grammar(filename: str, args):
         MOST_COMMON_COUNT = 1000
         sorted_rules = Counter(rules).most_common()
 
-        print(args.mode)
         if args.mode == "pre":
+            print("{:>5} | {}".format("count", "rule"))
             for rule in sorted_rules[:MOST_COMMON_COUNT]:
                 print("{:>5} | {}".format(rule[1], rule[0]))
 
