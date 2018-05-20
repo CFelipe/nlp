@@ -1,7 +1,10 @@
 import common
 import argparse
+import pickle
 from collections import Counter
+from pathlib import Path
 
+PICKLE_FILE = "models/grammar-model.pkl"
 
 class Node:
     def __init__(self, root: str, children: list = None):
@@ -182,6 +185,7 @@ def extract_grammar(filename: str, args):
             for rule in grammar.rules:
                 print(rule)
 
+    return grammar
 
 
 if __name__ == "__main__":
@@ -194,4 +198,8 @@ if __name__ == "__main__":
         help="Rules pre or post CNF conversion",
         default="post")
     args = argparser.parse_args()
-    extract_grammar(args.input_file, args)
+    grammar = extract_grammar(args.input_file, args)
+
+    p = Path(PICKLE_FILE)
+    with p.open('wb') as output_file:
+        pickle.dump(grammar, output_file, pickle.HIGHEST_PROTOCOL)
