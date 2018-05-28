@@ -1,10 +1,14 @@
 import common
 import argparse
 import pickle
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 PICKLE_FILE = "models/grammar-model.pkl"
+
+# pickle doesn't work with lambdas (see https://stackoverflow.com/a/16439720/2393963)
+def dd():
+    return defaultdict(int)
 
 class Node:
     def __init__(self, root: str, children: list = None):
@@ -33,10 +37,11 @@ class Rule:
 
 # TODO: make terminals lowercase
 class Grammar:
-    def __init__(self, rules: list, terminals: set):
+    def __init__(self, rules: list, terminals: set, words_pos):
         self.rules = rules
         self.nonterminals = set()
         self.terminals = terminals
+        self.words_pos = words_pos
 
         for rule in self.rules:
             self.nonterminals.add(rule.lhs)
@@ -125,6 +130,7 @@ def extract_grammar(filename: str, args):
     with open(filename, "r") as corpus_file:
         pos_stack = []
         paren_stack = []
+        words_pos = defaultdict(dd)
         prev = None
         root = None
         rules = []
@@ -160,13 +166,24 @@ def extract_grammar(filename: str, args):
                         else:
                             root = node
                         pos_stack.append(node)
-                    elif prev != "-NONE-":  # previous token was a POS, can only be a terminal
+                    elif prev != "-NONE-":
+                        # previous token was a POS, token can only be a terminal
                         terminals.add(prev)
+                        words_pos[token][prev] += 1
 
                 prev = token
 
+        # probabilities from frequencies
+        for word, d in words_pos.items():
+            total = sum(d.values())
+            for pos, count in d.items():
+                words_pos[word][pos] = count / total
+
         MOST_COMMON_COUNT = 1000
         sorted_rules = Counter(rules).most_common()
+
+        grammar_rules = [rule[0] for rule in sorted_rules[:MOST_COMMON_COUNT]]
+        grammar = Grammar(grammar_rules, terminals, words_pos)
 
         if args.mode == "pre":
             print("{:>5} | {}".format("count", "rule"))
@@ -182,14 +199,14 @@ def extract_grammar(filename: str, args):
             print("{:.3f}% coverage".format(100.0 * sum_first / len(rules)))
             assert len(rules) == sum_first + sum_rest
         else:
-            grammar_rules = [rule[0] for rule in sorted_rules[:MOST_COMMON_COUNT]]
-            grammar = Grammar(grammar_rules, terminals)
             for rule in grammar.rules:
                 print(rule)
 
             p = Path(PICKLE_FILE)
             with p.open('wb') as output_file:
                 pickle.dump(grammar, output_file, pickle.HIGHEST_PROTOCOL)
+
+        return grammar
 
 
 if __name__ == "__main__":
@@ -202,5 +219,7 @@ if __name__ == "__main__":
         help="Rules pre or post CNF conversion",
         default="post")
     args = argparser.parse_args()
-    extract_grammar(args.input_file, args)
+    grammar = extract_grammar(args.input_file, args)
+
+    print(grammar.words_pos)
 
