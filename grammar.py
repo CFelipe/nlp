@@ -34,7 +34,6 @@ class Rule:
     def __hash__(self):
         return hash((tuple(self.lhs), tuple(self.rhs)))
 
-
 # TODO: make terminals lowercase
 class Grammar:
     def __init__(self, rules: list, terminals: set, words_pos):
@@ -54,9 +53,7 @@ class Grammar:
     def cnf_term(self):
         term_rules = []
         for rule in self.rules:
-            new_rhs = [
-                "{}_NT".format(pos) if self.terminal(pos) else pos
-                for pos in rule.rhs
+            new_rhs = [ "{}_NT".format(pos) if self.terminal(pos) else pos for pos in rule.rhs
             ]
 
             new_rule = Rule(rule.lhs, new_rhs)
@@ -71,9 +68,9 @@ class Grammar:
 
     def cnf_bin(self):
         new_rules = []
+        count = 0
         for rule in self.rules:
             if len(rule.rhs) > 2:
-                count = 0
 
                 rhs = rule.rhs
                 while len(rhs) > 2:
@@ -120,7 +117,7 @@ def save_rule(node, rules):
             ]
 
             rules.append(
-                Rule(node.root, [child.root for child in node.children]))
+                Rule(node.root, [common.get_until_hyphen(child.root) for child in node.children]))
 
             for n in node.children:
                 save_rule(n, rules)
@@ -221,5 +218,5 @@ if __name__ == "__main__":
     args = argparser.parse_args()
     grammar = extract_grammar(args.input_file, args)
 
-    print(grammar.words_pos)
+    # print(grammar.words_pos)
 
