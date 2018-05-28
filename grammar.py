@@ -101,9 +101,11 @@ def print_tree(node, level=0):
 
 
 def save_rule(node, rules):
-    """Saves grammar rules"""
+    """Saves grammar rules by adding nodes to the tree recursively"""
 
     if node:
+        node.root = common.get_until_hyphen(node.root)
+
         if node.children and len(
                 node.children) == 1 and node.children[0].root == "-NONE-":
             return
@@ -184,8 +186,6 @@ def extract_grammar(filename: str, args):
             grammar = Grammar(grammar_rules, terminals)
             for rule in grammar.rules:
                 print(rule)
-
-    return grammar
 
 
 if __name__ == "__main__":

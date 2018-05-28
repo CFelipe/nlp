@@ -2,6 +2,9 @@ import sys
 import pickle
 from pathlib import Path
 
+def get_until_hyphen(rule: str):
+    return rule.split("-")[0]
+
 def tokenize(chars: str) -> list:
     "Convert a string of characters into a list of tokens."
     return chars.replace('(', ' ( ').replace(')', ' ) ').split()
@@ -21,7 +24,6 @@ class Tagger:
         except OSError:
             print("Model not found")
             sys.exit(0)
-
 
     def tag_sentence(self, sentence: str) -> None:
         raise NotImplementedError()
