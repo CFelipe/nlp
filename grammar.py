@@ -187,6 +187,10 @@ def extract_grammar(filename: str, args):
             for rule in grammar.rules:
                 print(rule)
 
+            p = Path(PICKLE_FILE)
+            with p.open('wb') as output_file:
+                pickle.dump(grammar, output_file, pickle.HIGHEST_PROTOCOL)
+
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Grammar extractor")
@@ -198,8 +202,5 @@ if __name__ == "__main__":
         help="Rules pre or post CNF conversion",
         default="post")
     args = argparser.parse_args()
-    grammar = extract_grammar(args.input_file, args)
+    extract_grammar(args.input_file, args)
 
-    p = Path(PICKLE_FILE)
-    with p.open('wb') as output_file:
-        pickle.dump(grammar, output_file, pickle.HIGHEST_PROTOCOL)
