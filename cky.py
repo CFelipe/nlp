@@ -9,15 +9,18 @@ def print_table(table: list):
             if i <= j:
                 print("{:>2} {:>2}".format(i, j), cell)
 
-def visit(words, table, i, j, k, idx):
+def visit(words, table, i, j, k, idx, indent=0):
     next_pos = table[i][j][idx]
-    print(words[i], next_pos)
 
-    if len(next_pos) == 1: return
+    if len(next_pos) == 1:
+        print(" " * indent, next_pos[0], words[i])
+        return
+    else:
+        print(" " * indent, next_pos[0])
 
     lhs, k, left_idx, right_idx = next_pos
-    visit(words, table, i, k, k, left_idx)
-    visit(words, table, k + 1, j, k, right_idx)
+    visit(words, table, i, k, k, left_idx, indent + 2)
+    visit(words, table, k + 1, j, k, right_idx, indent + 2)
 
 def cky_parse(grammar: Grammar, sentence: list) -> list:
     table = []
@@ -31,6 +34,7 @@ def cky_parse(grammar: Grammar, sentence: list) -> list:
             table[j][j].append(("{}_NT".format(rule),))
 
         for rule in grammar.rules:
+            # "flatten" unit productions
             if len(rule.rhs) == 1 and \
                 rule.rhs[0] in [pos[0] for pos in table[j][j]]:
                 table[j][j].append((rule.lhs,))
@@ -52,13 +56,14 @@ def cky_parse(grammar: Grammar, sentence: list) -> list:
         sentences = filter(lambda r: r[0] == 'S', table[0][len(words) - 1])
         for sentence in sentences:
             lhs, k, left_idx, right_idx = sentence
-            print(sentence)
-            visit(words, table, 0, len(words) - 1, k, left_idx)
+            print(sentence[0])
+            visit(words, table, 0, len(words) - 1, k, left_idx, indent=2)
+            visit(words, table, 0, len(words) - 1, k, right_idx, indent=2)
             print("---")
 
 if __name__ == "__main__":
     with open(PICKLE_FILE, 'rb') as grammar_file:
         grammar = pickle.load(grammar_file)
-        sentence = "I can n't stand this anymore ."
+        sentence = "This is really rewarding ."
 
         cky_parse(grammar, sentence)
