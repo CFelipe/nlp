@@ -37,7 +37,8 @@ def cky_parse(grammar: Grammar, sentence: list) -> list:
             # "flatten" unit productions
             if len(rule.rhs) == 1 and \
                 rule.rhs[0] in [pos[0] for pos in table[j][j]]:
-                table[j][j].append((rule.lhs,))
+                unit_str = "{}->{}".format(rule.lhs, rule.rhs[0])
+                table[j][j].append((unit_str,))
 
         # fill [j, (i: j..0)] (upwards)
         for i in reversed(range(j)):
@@ -46,10 +47,10 @@ def cky_parse(grammar: Grammar, sentence: list) -> list:
                 # print(table[i][k], table[k + 1][j])
                 for rule in grammar.rules:
                     if len(rule.rhs) == 2 and \
-                       rule.rhs[0] in [pos[0] for pos in table[i][k]] and \
-                       rule.rhs[1] in [pos[0] for pos in table[k + 1][j]]:
-                        idx1 = [pos[0] for pos in table[i][k]].index(rule.rhs[0])
-                        idx2 = [pos[0] for pos in table[k + 1][j]].index(rule.rhs[1])
+                       rule.rhs[0] in [pos[0].split("->")[0] for pos in table[i][k]] and \
+                       rule.rhs[1] in [pos[0].split("->")[0] for pos in table[k + 1][j]]:
+                        idx1 = [pos[0].split("->")[0] for pos in table[i][k]].index(rule.rhs[0])
+                        idx2 = [pos[0].split("->")[0] for pos in table[k + 1][j]].index(rule.rhs[1])
                         table[i][j].append((rule.lhs, k, idx1, idx2))
 
     if 'S' in [rules[0] for rules in table[0][len(words) - 1]]:
