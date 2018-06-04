@@ -21,12 +21,15 @@ class Node:
 
 
 class Rule:
-    def __init__(self, lhs: str, rhs: list):
+    def __init__(self, lhs: str, rhs: list, prob=0.0):
         self.lhs = lhs
         self.rhs = rhs
+        self.prob = prob
 
     def __repr__(self):
-        return "{:>10} -> {}".format(self.lhs, " ".join(self.rhs))
+        return "{:>10} -> {} [{:.5f}]".format(self.lhs,
+                                        " ".join(self.rhs),
+                                        self.prob)
 
     def __eq__(self, other):
         return self.lhs == other.lhs and self.rhs == other.rhs
@@ -56,14 +59,14 @@ class Grammar:
             new_rhs = [ "{}_NT".format(pos) if self.terminal(pos) else pos for pos in rule.rhs
             ]
 
-            new_rule = Rule(rule.lhs, new_rhs)
+            new_rule = Rule(rule.lhs, new_rhs, rule.prob)
             term_rules.append(new_rule)
 
         self.rules = term_rules
 
         # create nonterminal rules from terminals
         for terminal in self.terminals:
-            nt_rule = Rule("{}_NT".format(terminal), [terminal])
+            nt_rule = Rule("{}_NT".format(terminal), [terminal], 1.0)
             self.rules.append(nt_rule)
 
     def cnf_bin(self):
@@ -77,14 +80,15 @@ class Grammar:
                     next_rule = "{}_{}".format(rule.lhs, count)
                     new_lhs = rule.lhs if count == 0 else next_rule
                     new_rhs = [rhs[0], "{}_{}".format(rule.lhs, count + 1)]
-                    new_rules.append(Rule(new_lhs, new_rhs))
+                    new_rules.append(Rule(new_lhs, new_rhs, 1.0))
                     count += 1
                     rhs = rhs[1:]
 
                 new_lhs = "{}_{}".format(rule.lhs, count)
                 new_rhs = rhs
-                new_rules.append(Rule(new_lhs, new_rhs))
+                new_rules.append(Rule(new_lhs, new_rhs, 1.0))
             else:
+                print(rule)
                 new_rules.append(rule)
 
         self.rules = new_rules
@@ -178,6 +182,11 @@ def extract_grammar(filename: str, args):
 
         MOST_COMMON_COUNT = 1000
         sorted_rules = Counter(rules).most_common()
+
+        for rule in sorted_rules[:MOST_COMMON_COUNT]:
+            same_lhs = filter(lambda r: r[0].lhs == rule[0].lhs, sorted_rules)
+            total = sum([r[1] for r in same_lhs])
+            rule[0].prob = rule[1] / total
 
         grammar_rules = [rule[0] for rule in sorted_rules[:MOST_COMMON_COUNT]]
         grammar = Grammar(grammar_rules, terminals, words_pos)
