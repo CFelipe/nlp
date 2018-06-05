@@ -123,7 +123,6 @@ def pcky_parse(grammar: Grammar, sentence: list) -> list:
 if __name__ == "__main__":
     with open(PICKLE_FILE, 'rb') as grammar_file:
         grammar = pickle.load(grammar_file)
-        sentence = "This is really rewarding ."
 
         argparser = argparse.ArgumentParser(description="Grammar extractor")
         argparser.add_argument("sentence", help="Sentence to be parsed")

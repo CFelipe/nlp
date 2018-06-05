@@ -1,5 +1,6 @@
 Some NLP algorithms:
 
-- A naive POS tagger based on most frequently used tag for word
+- A baseline POS tagger (selects the most frequently used tag for each word)
 - A HMM based POS tagger using the Viterbi algorithm
-- Grammar extraction from treebanks
+- Grammar extraction from treebanks and conversion to CNF
+- CKY and PCKY parsing
